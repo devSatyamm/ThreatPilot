@@ -2,7 +2,7 @@
 
 > **AI-Driven Autonomous Security Testing Platform**
 > 
-> *Test your applications like a hacker before attackers do.*
+> *Make your applications secure by default.*
 
 ---
 
