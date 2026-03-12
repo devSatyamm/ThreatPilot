@@ -157,7 +157,7 @@ Real-time vulnerability tracking, historical trend analysis, and compliance moni
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐           │
-│  │   Web UI     │  ��  API Layer    |    Auto      |          │
+│  │   Web UI     │  | API Layer    |  |   Auto       |           │
 │  │  Dashboard   │  │  (REST/gRPC) │  │  Service     │           │
 │  └──────────────┘  └──────────────┘  └──────────────┘           │
 │         ↓                ↓                   ↓                  │
