@@ -168,7 +168,7 @@ Real-time vulnerability tracking, historical trend analysis, and compliance moni
 │  │  │  Module      │  │  Engine          │          │           │
 │  │  └──────────────┘  └──────────────────┘          │           │
 │  │  ┌──────────────┐  ┌──────────────────┐          │           │
-│  │  │  AI Analyzer │  │  Vulnerability  │           │           │
+│  │  │  AI Analyzer │  │  Vulnerability   │          │           │
 │  │  │              │  │  Detector        │          │           │
 │  │  └──────────────┘  └──────────────────┘          │           │
 │  └──────────────────────────────────────────────────┘           │
@@ -262,7 +262,7 @@ Meet the brilliant minds behind ThreatPilot:
 |------|--------|
 | 👨‍💻 **Satyam Mishra**     | [Developersatyam](https://www.instagram.com/developersatyam/) |  
 | 👨‍💻 **Rudraksh Purohit** | [Rudraksh Purohit](https://www.instagram.com/purohit.rudraksh018/) |
-| 👨‍💻 **Devansh Agarwal** | [Devansh Agarwal](https://www.instagram.com/devansh___agarwal0404/) |
+
 
 **Hackathon Name**:  Hack & Break: Generative AI & Cybersecurity Innovation Challenge
 
