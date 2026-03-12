@@ -242,7 +242,7 @@ We adhere to 6 safety principles in our design:
 
 ### 📊 Project PPT Presentation
 
-**[Download/View ThreatPilot Project Presentation](link-to-ppt-file)**
+**[Download/View ThreatPilot Project Presentation](ThreatPilot.pptx)**
 
 *Presentation includes:*
 - Executive summary and problem statement
