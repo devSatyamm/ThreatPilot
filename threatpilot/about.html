@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>About — ThreatPilot</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--cyan:#00f5ff;--cyan-dim:#00c8d4;--purple:#b44fff;--red:#ff2d55;--green:#00ff88;--yellow:#ffaa00;--bg:#04040d;--bg2:#080815;--surface:rgba(255,255,255,0.03);--border:rgba(0,245,255,0.12);--border-bright:rgba(0,245,255,0.35);--text:#c8d6e5;--text-dim:#6b7a8f;--mono:'Share Tech Mono',monospace;--display:'Orbitron',sans-serif;--body:'Rajdhani',sans-serif}
+html{scroll-behavior:smooth}body{background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;cursor:none}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--cyan);border-radius:2px}
+.cursor{width:12px;height:12px;background:var(--cyan);border-radius:50%;position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);box-shadow:0 0 12px var(--cyan),0 0 24px var(--cyan);mix-blend-mode:screen}
+.cursor-trail{width:28px;height:28px;border:1px solid rgba(0,245,255,.4);border-radius:50%;position:fixed;pointer-events:none;z-index:9998;transform:translate(-50%,-50%)}
+#bgCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.07) 2px,rgba(0,0,0,.07) 4px);pointer-events:none;z-index:1}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1.2rem 4rem;background:rgba(4,4,13,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);transition:all .3s}
+nav.scrolled{padding:.8rem 4rem;border-color:var(--border-bright)}
+.nav-logo{font-family:var(--display);font-size:1.1rem;font-weight:700;letter-spacing:.2em;color:#fff}
+.logo-bracket{color:var(--cyan);opacity:.6}.accent{color:var(--cyan)}
+.nav-links{display:flex;list-style:none;gap:2rem}
+.nav-links a{font-family:var(--mono);font-size:.72rem;letter-spacing:.18em;color:var(--text-dim);text-decoration:none;position:relative;padding-bottom:4px;transition:color .3s}
+.nav-links a::after{content:'';position:absolute;bottom:0;left:0;width:0;height:1px;background:var(--cyan);transition:width .3s;box-shadow:0 0 8px var(--cyan)}
+.nav-links a:hover,.nav-links a.active{color:var(--cyan)}.nav-links a:hover::after,.nav-links a.active::after{width:100%}
+.nav-status{display:flex;align-items:center;gap:.6rem;font-family:var(--mono);font-size:.68rem;color:var(--text-dim)}
+.status-dot{width:6px;height:6px;background:#00ff88;border-radius:50%;box-shadow:0 0 8px #00ff88;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.8)}}
+.page-hero{position:relative;z-index:2;padding:10rem 4rem 5rem;overflow:hidden}
+.page-hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(0,245,255,.06) 0%,transparent 70%);pointer-events:none}
+.page-hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,245,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,255,.03) 1px,transparent 1px);background-size:50px 50px;pointer-events:none}
+.breadcrumb{font-family:var(--mono);font-size:.68rem;color:var(--text-dim);letter-spacing:.15em;margin-bottom:1rem;opacity:0;animation:fadeUp .6s .2s forwards}
+.breadcrumb a{color:var(--cyan);text-decoration:none}
+.page-title{font-family:var(--display);font-size:clamp(2.5rem,6vw,5rem);font-weight:900;line-height:1;color:#fff;margin-bottom:1rem;opacity:0;animation:fadeUp .8s .4s forwards}
+.page-title .accent{text-shadow:0 0 40px var(--cyan)}
+.page-subtitle{font-family:var(--mono);font-size:.9rem;color:var(--text-dim);max-width:560px;line-height:1.8;opacity:0;animation:fadeUp .8s .6s forwards}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.content{position:relative;z-index:2;padding:0 4rem 6rem}
+.reveal{opacity:0;transform:translateY(32px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.about-intro{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:start;margin-bottom:6rem}
+.about-lead{font-size:1.3rem;font-weight:600;color:#fff;line-height:1.5;margin-bottom:1.5rem}
+.highlight{color:var(--cyan)}.about-body{font-size:1rem;color:var(--text-dim);margin-bottom:1rem;line-height:1.8}
+.about-tags{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.5rem}
+.tag{font-family:var(--mono);font-size:.7rem;padding:.3rem .8rem;background:rgba(0,245,255,.06);border:1px solid rgba(0,245,255,.2);color:var(--cyan-dim);letter-spacing:.1em;transition:all .3s;cursor:default}
+.tag:hover{background:rgba(0,245,255,.12);border-color:var(--cyan)}
+.about-terminal{background:rgba(0,0,0,.6);border:1px solid var(--border);box-shadow:0 0 40px rgba(0,245,255,.05),0 20px 60px rgba(0,0,0,.5);position:relative;overflow:hidden}
+.about-terminal::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);animation:scanAnim 4s ease-in-out infinite}
+@keyframes scanAnim{0%{top:0;opacity:1}100%{top:100%;opacity:.1}}
+.terminal-header{display:flex;align-items:center;gap:.5rem;padding:.75rem 1rem;border-bottom:1px solid var(--border);background:rgba(0,0,0,.3)}
+.t-dot{width:10px;height:10px;border-radius:50%}.t-dot.r{background:#ff5f57}.t-dot.y{background:#febc2e}.t-dot.g{background:#28c840}
+.t-title{font-family:var(--mono);font-size:.7rem;color:var(--text-dim);margin-left:.5rem}
+.terminal-body{padding:1.5rem;font-family:var(--mono);font-size:.78rem;line-height:2}
+.t-line{display:block}.t-prompt{color:var(--cyan);margin-right:.5rem}.t-cmd{color:#fff}
+.t-out{color:var(--text-dim);padding-left:1rem}.t-warn{color:var(--yellow);padding-left:1rem}.t-ok{color:var(--green);padding-left:1rem}.t-acc{color:var(--cyan)}
+.cursor-blink{color:var(--cyan);animation:blink 1s step-end infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.section-label{font-family:var(--mono);font-size:.7rem;color:var(--cyan);letter-spacing:.2em;margin-bottom:.75rem}
+.section-heading{font-family:var(--display);font-size:clamp(1.6rem,3vw,2.5rem);font-weight:700;color:#fff;margin-bottom:3rem;line-height:1.2}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:6rem}
+.info-card{padding:2rem;background:var(--surface);border:1px solid var(--border);position:relative;overflow:hidden;transition:all .4s}
+.info-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);transform:scaleX(0);transition:transform .4s}
+.info-card:hover::before{transform:scaleX(1)}.info-card:hover{border-color:var(--border-bright);background:rgba(0,245,255,.02)}
+.info-card.pc::before{background:linear-gradient(90deg,transparent,var(--purple),transparent)}.info-card.pc:hover{border-color:rgba(180,79,255,.35)}
+.card-icon-wrap{width:44px;height:44px;color:var(--cyan);margin-bottom:1.2rem}
+.info-card.pc .card-icon-wrap{color:var(--purple)}.card-icon-wrap svg{width:100%;height:100%}
+.card-h{font-family:var(--display);font-size:1rem;font-weight:700;color:#fff;margin-bottom:.75rem;letter-spacing:.05em}
+.card-p{font-size:.92rem;color:var(--text-dim);line-height:1.7}
+.card-num-badge{position:absolute;top:1rem;right:1rem;font-family:var(--display);font-size:.6rem;color:rgba(0,245,255,.25);letter-spacing:.2em}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin-bottom:6rem}
+.stat-card{padding:2rem 1.5rem;background:var(--surface);border:1px solid var(--border);text-align:center;transition:all .4s;position:relative;overflow:hidden}
+.stat-card:hover{border-color:var(--border-bright);transform:translateY(-4px)}.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0;transition:opacity .4s}.stat-card:hover::after{opacity:1}
+.stat-big{font-family:var(--display);font-size:2.8rem;font-weight:900;color:var(--cyan);line-height:1;text-shadow:0 0 30px rgba(0,245,255,.4)}.stat-unit{font-family:var(--display);font-size:1.2rem;color:var(--cyan-dim)}.stat-lbl{font-family:var(--mono);font-size:.65rem;color:var(--text-dim);letter-spacing:.12em;margin-top:.5rem}
+.tech-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:6rem}
+.tech-item{display:flex;align-items:center;gap:1rem;padding:1.2rem 1.5rem;background:var(--surface);border:1px solid var(--border);transition:all .3s}
+.tech-item:hover{border-color:var(--border-bright);background:rgba(0,245,255,.02)}
+.tech-dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);flex-shrink:0;box-shadow:0 0 8px var(--cyan)}
+.tech-dot.p{background:var(--purple);box-shadow:0 0 8px var(--purple)}.tech-dot.g{background:var(--green);box-shadow:0 0 8px var(--green)}
+.tech-name{font-family:var(--display);font-size:.72rem;font-weight:700;color:#fff;letter-spacing:.08em}.tech-role{font-family:var(--mono);font-size:.62rem;color:var(--text-dim)}
+.about-cta{text-align:center;padding:4rem;background:var(--surface);border:1px solid var(--border);position:relative;overflow:hidden;margin-bottom:2rem}
+.about-cta::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),var(--purple),transparent)}
+.cta-title{font-family:var(--display);font-size:1.8rem;font-weight:700;color:#fff;margin-bottom:1rem}.cta-sub{font-family:var(--mono);font-size:.8rem;color:var(--text-dim);margin-bottom:2rem}
+.btn-row{display:flex;justify-content:center;gap:1rem;flex-wrap:wrap}
+.btn-p{display:inline-flex;align-items:center;gap:.6rem;padding:.85rem 2rem;background:transparent;border:1px solid var(--cyan);color:var(--cyan);font-family:var(--mono);font-size:.78rem;letter-spacing:.15em;text-decoration:none;position:relative;overflow:hidden;transition:all .3s}
+.btn-p::before{content:'';position:absolute;inset:0;background:var(--cyan);transform:translateX(-101%);transition:transform .3s;z-index:0}.btn-p:hover::before{transform:translateX(0)}.btn-p:hover{color:var(--bg);box-shadow:0 0 30px rgba(0,245,255,.4)}.btn-p span{position:relative;z-index:1}
+.btn-o{display:inline-flex;align-items:center;padding:.85rem 2rem;background:transparent;border:1px solid rgba(255,255,255,.1);color:var(--text-dim);font-family:var(--mono);font-size:.78rem;letter-spacing:.15em;text-decoration:none;transition:all .3s}.btn-o:hover{border-color:var(--purple);color:var(--purple);box-shadow:0 0 20px rgba(180,79,255,.2)}
+footer{position:relative;z-index:2;background:rgba(0,0,0,.5);border-top:1px solid var(--border);padding:2.5rem 4rem;text-align:center}
+footer::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),var(--purple),transparent);opacity:.5}
+.foot-logo{font-family:var(--display);font-size:1.2rem;font-weight:700;color:#fff;letter-spacing:.2em;margin-bottom:.75rem}.foot-meta{font-family:var(--mono);font-size:.65rem;color:var(--text-dim)}.foot-sep{margin:0 .75rem;color:var(--border-bright)}
+@media(max-width:900px){nav{padding:1rem 1.5rem}.nav-links{display:none}.page-hero{padding:8rem 1.5rem 3rem}.content{padding:0 1.5rem 4rem}.about-intro{grid-template-columns:1fr}.two-col{grid-template-columns:1fr}.stats-row{grid-template-columns:1fr 1fr}.tech-grid{grid-template-columns:1fr 1fr}footer{padding:2rem 1.5rem}}
+</style>
+</head>
+<body>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-trail" id="cursorTrail"></div>
+<canvas id="bgCanvas"></canvas>
+<div class="scanlines"></div>
+
+<nav id="navbar">
+  <div class="nav-logo"><span class="logo-bracket">[</span>THREAT<span class="accent">PILOT</span><span class="logo-bracket">]</span></div>
+  <ul class="nav-links">
+    <li><a href="../index.html">HOME</a></li>
+    <li><a href="about.html" class="active">ABOUT</a></li>
+    <li><a href="features.html">FEATURES</a></li>
+    <li><a href="architecture.html">ARCH</a></li>
+    <li><a href="simulation.html">SIMULATE</a></li>
+    <li><a href="team.html">TEAM</a></li>
+  </ul>
+  <div class="nav-status"><span class="status-dot"></span><span>SYSTEM ONLINE</span></div>
+</nav>
+
+<div class="page-hero">
+  <div class="page-hero-bg"></div><div class="page-hero-grid"></div>
+  <div class="breadcrumb"><a href="../index.html">HOME</a> / ABOUT</div>
+  <h1 class="page-title">About <span class="accent">ThreatPilot</span></h1>
+  <p class="page-subtitle">// Understanding the mission, the problem, and the AI-powered solution behind autonomous security testing.</p>
+</div>
+
+<div class="content">
+  <div class="about-intro reveal">
+    <div>
+      <p class="about-lead">ThreatPilot is an <span class="highlight">AI-powered autonomous security testing platform</span> designed to find vulnerabilities before attackers do.</p>
+      <p class="about-body">Traditional security audits are slow, expensive, and bottlenecked by human capacity. A typical penetration test takes weeks, costs thousands, and only captures a snapshot in time — leaving entire release cycles unprotected.</p>
+      <p class="about-body">ThreatPilot changes the game by autonomously crawling web and native mobile applications, simulating real-world cyberattacks using advanced AI strategies, and generating comprehensive vulnerability reports — all without a single line of manual intervention.</p>
+      <p class="about-body">Built for the speed of modern DevSecOps pipelines, ThreatPilot integrates seamlessly into CI/CD workflows, making security testing a continuous automated process rather than a pre-launch checkpoint.</p>
+      <div class="about-tags">
+        <span class="tag">Web Apps</span><span class="tag">Mobile Apps</span><span class="tag">SQLi</span><span class="tag">Auth Bypass</span><span class="tag">Brute Force</span><span class="tag">XSS</span><span class="tag">CSRF</span><span class="tag">Agentic AI</span><span class="tag">CI/CD</span>
+      </div>
+    </div>
+    <div class="about-terminal">
+      <div class="terminal-header"><span class="t-dot r"></span><span class="t-dot y"></span><span class="t-dot g"></span><span class="t-title">threatpilot@core — about</span></div>
+      <div class="terminal-body" id="termBody">
+        <span class="t-line"><span class="t-prompt">$</span><span class="t-cmd"> threatpilot --info</span></span>
+        <span class="t-line t-out">[*] ThreatPilot v1.0 — Agentic Security Engine</span>
+        <span class="t-line t-out">[*] Built by Team <span class="t-acc">GreyMatter</span></span>
+        <span class="t-line t-out">[*] Hackathon: Hack &amp; Break 2026</span>
+        <span class="t-line t-out">[*] Theme: <span class="t-acc">Agentic AI</span></span>
+        <span class="t-line t-out">[*] Loading attack module registry...</span>
+        <span class="t-line t-out">[*] Modules: <span class="t-acc">SQLi · XSS · Auth · CSRF · Traversal</span></span>
+        <span class="t-line t-warn">[!] Target scope: web apps + native mobile</span>
+        <span class="t-line t-out">[*] AI backend: GPT-4o Attack Planner</span>
+        <span class="t-line t-ok">[✓] System ready for autonomous operation</span>
+        <span class="t-line"><span class="t-prompt">$</span> <span class="cursor-blink">_</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="reveal"><div class="section-label">// THE PROBLEM</div><h2 class="section-heading">Why Traditional Security <span class="accent">Fails</span></h2></div>
+  <div class="two-col reveal">
+    <div class="info-card"><div class="card-num-badge">01</div><div class="card-icon-wrap"><svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="16" stroke="currentColor" stroke-width="1.5"/><path d="M20 12v10l6 4" stroke="currentColor" stroke-width="2"/></svg></div><div class="card-h">Too Slow</div><p class="card-p">Manual penetration tests take weeks to complete. Modern software ships daily. Security can't keep up with CI/CD velocity using human-only approaches.</p></div>
+    <div class="info-card"><div class="card-num-badge">02</div><div class="card-icon-wrap"><svg viewBox="0 0 40 40" fill="none"><path d="M8 32l8-16 6 8 4-6 8 14H8z" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="card-h">Too Expensive</div><p class="card-p">A single professional penetration test costs $5,000–$50,000. Startups and mid-size teams can't afford continuous coverage at these rates.</p></div>
+    <div class="info-card"><div class="card-num-badge">03</div><div class="card-icon-wrap"><svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="16" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M8 36c0-6.627 5.373-12 12-12s12 5.373 12 12" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="card-h">Human-Limited</div><p class="card-p">Human testers have limited attention, inconsistent coverage, and fatigue. Attackers use automated tools — defenders shouldn't rely solely on manual effort.</p></div>
+    <div class="info-card"><div class="card-num-badge">04</div><div class="card-icon-wrap"><svg viewBox="0 0 40 40" fill="none"><rect x="8" y="8" width="24" height="24" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M14 20h12M20 14v12" stroke="currentColor" stroke-width="1.5" opacity=".4"/></svg></div><div class="card-h">Snapshot-Only</div><p class="card-p">A test done today doesn't protect tomorrow. Every new feature or config change introduces new attack surface that goes untested until the next audit.</p></div>
+  </div>
+
+  <div class="reveal"><div class="section-label">// THE SOLUTION</div><h2 class="section-heading">ThreatPilot's <span class="accent">AI Approach</span></h2></div>
+  <div class="two-col reveal">
+    <div class="info-card pc"><div class="card-num-badge">01</div><div class="card-icon-wrap"><svg viewBox="0 0 40 40" fill="none"><path d="M20 6L34 14V26L20 34L6 26V14L20 6Z" stroke="currentColor" stroke-width="1.5"/><circle cx="20" cy="20" r="4" fill="currentColor"/></svg></div><div class="card-h">Autonomous Crawling</div><p class="card-p">AI-driven crawler autonomously discovers all endpoints, forms, and API routes across web and mobile apps — building a complete real-time attack surface map.</p></div>
+    <div class="info-card pc"><div class="card-num-badge">02</div><div class="card-icon-wrap"><svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="14" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"/><circle cx="20" cy="20" r="5" fill="currentColor" opacity=".4"/></svg></div><div class="card-h">AI Attack Simulation</div><p class="card-p">GPT-4o powered attack planner generates contextual adaptive payloads — not template-based. It thinks like a real attacker and adjusts strategy based on server responses.</p></div>
+    <div class="info-card pc"><div class="card-num-badge">03</div><div class="card-icon-wrap"><svg viewBox="0 0 40 40" fill="none"><rect x="8" y="8" width="24" height="24" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M13 20l5 5 9-10" stroke="currentColor" stroke-width="2"/></svg></div><div class="card-h">Intelligent Classification</div><p class="card-p">Responses are analyzed by AI to filter false positives, assign CVSS severity scores, and identify exploit chains — precision rules-based scanners can't achieve.</p></div>
+    <div class="info-card pc"><div class="card-num-badge">04</div><div class="card-icon-wrap"><svg viewBox="0 0 40 40" fill="none"><path d="M10 6h14l8 8v20H10V6z" stroke="currentColor" stroke-width="1.5"/><path d="M24 6v8h8M15 20h10M15 26h6" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="card-h">Actionable Reporting</div><p class="card-p">Auto-generated reports with CVE IDs, reproduction steps, severity ratings, and AI-suggested code fixes — delivered in seconds, not weeks.</p></div>
+  </div>
+
+  <div class="reveal"><div class="section-label">// BY THE NUMBERS</div><h2 class="section-heading">Platform <span class="accent">Metrics</span></h2></div>
+  <div class="stats-row reveal">
+    <div class="stat-card"><div><span class="stat-big" data-target="99">0</span><span class="stat-unit">%</span></div><div class="stat-lbl">THREAT DETECTION RATE</div></div>
+    <div class="stat-card"><div><span class="stat-big" data-target="47">0</span><span class="stat-unit">+</span></div><div class="stat-lbl">ATTACK VECTORS COVERED</div></div>
+    <div class="stat-card"><div><span class="stat-big" data-target="30">0</span><span class="stat-unit">s</span></div><div class="stat-lbl">AVG SCAN COMPLETION</div></div>
+    <div class="stat-card"><div><span class="stat-big" data-target="0">0</span><span class="stat-unit">ms</span></div><div class="stat-lbl">HUMAN INTERVENTION NEEDED</div></div>
+  </div>
+
+  <div class="reveal"><div class="section-label">// TECHNOLOGY STACK</div><h2 class="section-heading">Built With <span class="accent">Precision</span></h2></div>
+  <div class="tech-grid reveal">
+    <div class="tech-item"><div class="tech-dot"></div><div><div class="tech-name">GPT-4o</div><div class="tech-role">AI Attack Planner &amp; Analyzer</div></div></div>
+    <div class="tech-item"><div class="tech-dot p"></div><div><div class="tech-name">Python 3.12</div><div class="tech-role">Core Engine &amp; Crawler</div></div></div>
+    <div class="tech-item"><div class="tech-dot g"></div><div><div class="tech-name">Playwright</div><div class="tech-role">Browser Automation &amp; Crawling</div></div></div>
+    <div class="tech-item"><div class="tech-dot"></div><div><div class="tech-name">FastAPI</div><div class="tech-role">REST API Backend</div></div></div>
+    <div class="tech-item"><div class="tech-dot p"></div><div><div class="tech-name">Frida</div><div class="tech-role">Mobile App Instrumentation</div></div></div>
+    <div class="tech-item"><div class="tech-dot g"></div><div><div class="tech-name">React</div><div class="tech-role">Dashboard Frontend</div></div></div>
+    <div class="tech-item"><div class="tech-dot"></div><div><div class="tech-name">Docker</div><div class="tech-role">Sandbox Isolation</div></div></div>
+    <div class="tech-item"><div class="tech-dot p"></div><div><div class="tech-name">LangChain</div><div class="tech-role">Agentic AI Orchestration</div></div></div>
+    <div class="tech-item"><div class="tech-dot g"></div><div><div class="tech-name">SQLMap</div><div class="tech-role">SQL Injection Testing</div></div></div>
+  </div>
+
+  <div class="about-cta reveal">
+    <div class="cta-title">Ready to see it in <span class="accent">action?</span></div>
+    <div class="cta-sub">// Run a live demonstration scan and watch ThreatPilot autonomously hunt for vulnerabilities</div>
+    <div class="btn-row">
+      <a href="simulation.html" class="btn-p"><span>⬡ LAUNCH SIMULATION</span></a>
+      <a href="architecture.html" class="btn-o">VIEW ARCHITECTURE →</a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="foot-logo"><span class="logo-bracket">[</span>THREAT<span class="accent">PILOT</span><span class="logo-bracket">]</span></div>
+  <div class="foot-meta">© 2026 Team GreyMatter<span class="foot-sep">·</span>Satyam Mishra<span class="foot-sep">·</span>Hack &amp; Break 2026</div>
+</footer>
+
+<script>
+const cur=document.getElementById('cursor'),trail=document.getElementById('cursorTrail');
+let mx=0,my=0,tx=0,ty=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px'});
+(function a(){tx+=(mx-tx)*.12;ty+=(my-ty)*.12;trail.style.left=tx+'px';trail.style.top=ty+'px';requestAnimationFrame(a)})();
+const canvas=document.getElementById('bgCanvas'),ctx=canvas.getContext('2d');
+canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;initP()});
+const pts=[];
+function initP(){pts.length=0;for(let i=0;i<70;i++)pts.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,s:Math.random()*1.5+.3,o:Math.random()*.4+.1,c:Math.random()>.5?'0,245,255':'180,79,255',p:Math.random()*Math.PI*2,ps:.01+Math.random()*.02})}
+initP();
+let ht=0;
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);ht+=.002;
+  const sz=40,cols=Math.ceil(canvas.width/(sz*1.75))+2,rows=Math.ceil(canvas.height/(sz*1.5))+2;
+  for(let r=-1;r<rows;r++)for(let c=-1;c<cols;c++){
+    const x=c*sz*1.75+(r%2)*sz*.875,y=r*sz*1.5,d=Math.sqrt((x-canvas.width/2)**2+(y-canvas.height/2)**2),w=Math.sin(d*.008-ht*2)*.5+.5,al=w*.04+.01;
+    ctx.beginPath();for(let i=0;i<6;i++){const ag=(Math.PI/3)*i;ctx.lineTo(x+sz*.85*Math.cos(ag),y+sz*.85*Math.sin(ag))}
+    ctx.closePath();ctx.strokeStyle=`rgba(0,245,255,${al})`;ctx.lineWidth=.4;ctx.stroke();
+  }
+  for(let i=0;i<pts.length;i++){
+    const p=pts[i];p.x+=p.vx;p.y+=p.vy;p.p+=p.ps;
+    if(p.x<0||p.x>canvas.width||p.y<0||p.y>canvas.height){p.x=Math.random()*canvas.width;p.y=Math.random()*canvas.height}
+    ctx.beginPath();ctx.arc(p.x,p.y,p.s,0,Math.PI*2);ctx.fillStyle=`rgba(${p.c},${p.o*(.7+.3*Math.sin(p.p))})`;ctx.fill();
+    for(let j=i+1;j<pts.length;j++){const q=pts[j],dx=p.x-q.x,dy=p.y-q.y,dist=Math.sqrt(dx*dx+dy*dy);if(dist<90){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.strokeStyle=`rgba(0,245,255,${(1-dist/90)*.06})`;ctx.lineWidth=.5;ctx.stroke()}}
+  }
+  requestAnimationFrame(draw);
+}
+draw();
+window.addEventListener('scroll',()=>document.getElementById('navbar').classList.toggle('scrolled',scrollY>60));
+const ro=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){x.target.classList.add('visible');ro.unobserve(x.target)}}),{threshold:.1});
+document.querySelectorAll('.reveal').forEach(el=>ro.observe(el));
+function counter(el,target){const s=performance.now();(function u(n){const p=Math.min((n-s)/1800,1),e=1-Math.pow(1-p,3);el.textContent=Math.floor(e*target);if(p<1)requestAnimationFrame(u);else el.textContent=target;})(performance.now())}
+const co=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){document.querySelectorAll('.stat-big').forEach(el=>counter(el,+el.dataset.target));co.disconnect()}}),{threshold:.4});
+const sr=document.querySelector('.stats-row');if(sr)co.observe(sr);
+const tb=document.getElementById('termBody');
+if(tb){const lines=tb.querySelectorAll('.t-line');lines.forEach(l=>{l.style.opacity='0';l.style.transform='translateX(-8px)';l.style.transition='opacity .4s,transform .4s'});const to=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){lines.forEach((l,i)=>setTimeout(()=>{l.style.opacity='1';l.style.transform='translateX(0)'},i*160));to.disconnect()}}),{threshold:.3});to.observe(tb);}
+</script>
+</body>
+</html>
