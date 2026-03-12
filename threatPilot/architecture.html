@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Architecture — ThreatPilot</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--cyan:#00f5ff;--cyan-dim:#00c8d4;--purple:#b44fff;--red:#ff2d55;--green:#00ff88;--yellow:#ffaa00;--bg:#04040d;--bg2:#080815;--surface:rgba(255,255,255,0.03);--border:rgba(0,245,255,0.12);--border-bright:rgba(0,245,255,0.35);--text:#c8d6e5;--text-dim:#6b7a8f;--mono:'Share Tech Mono',monospace;--display:'Orbitron',sans-serif;--body:'Rajdhani',sans-serif}
+html{scroll-behavior:smooth}body{background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;cursor:none}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--cyan);border-radius:2px}
+.cursor{width:12px;height:12px;background:var(--cyan);border-radius:50%;position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);box-shadow:0 0 12px var(--cyan),0 0 24px var(--cyan);mix-blend-mode:screen}
+.cursor-trail{width:28px;height:28px;border:1px solid rgba(0,245,255,.4);border-radius:50%;position:fixed;pointer-events:none;z-index:9998;transform:translate(-50%,-50%)}
+#bgCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.07) 2px,rgba(0,0,0,.07) 4px);pointer-events:none;z-index:1}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1.2rem 4rem;background:rgba(4,4,13,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);transition:all .3s}
+nav.scrolled{padding:.8rem 4rem;border-color:var(--border-bright)}
+.nav-logo{font-family:var(--display);font-size:1.1rem;font-weight:700;letter-spacing:.2em;color:#fff}
+.logo-bracket{color:var(--cyan);opacity:.6}.accent{color:var(--cyan)}
+.nav-links{display:flex;list-style:none;gap:2rem}
+.nav-links a{font-family:var(--mono);font-size:.72rem;letter-spacing:.18em;color:var(--text-dim);text-decoration:none;position:relative;padding-bottom:4px;transition:color .3s}
+.nav-links a::after{content:'';position:absolute;bottom:0;left:0;width:0;height:1px;background:var(--cyan);transition:width .3s;box-shadow:0 0 8px var(--cyan)}
+.nav-links a:hover,.nav-links a.active{color:var(--cyan)}.nav-links a:hover::after,.nav-links a.active::after{width:100%}
+.nav-status{display:flex;align-items:center;gap:.6rem;font-family:var(--mono);font-size:.68rem;color:var(--text-dim)}
+.status-dot{width:6px;height:6px;background:#00ff88;border-radius:50%;box-shadow:0 0 8px #00ff88;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.8)}}
+.page-hero{position:relative;z-index:2;padding:10rem 4rem 5rem;overflow:hidden}
+.page-hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(0,245,255,.05) 0%,transparent 70%);pointer-events:none}
+.page-hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,245,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,255,.03) 1px,transparent 1px);background-size:50px 50px;pointer-events:none}
+.breadcrumb{font-family:var(--mono);font-size:.68rem;color:var(--text-dim);letter-spacing:.15em;margin-bottom:1rem;opacity:0;animation:fadeUp .6s .2s forwards}
+.breadcrumb a{color:var(--cyan);text-decoration:none}
+.page-title{font-family:var(--display);font-size:clamp(2.5rem,6vw,5rem);font-weight:900;line-height:1;color:#fff;margin-bottom:1rem;opacity:0;animation:fadeUp .8s .4s forwards}
+.page-title .accent{text-shadow:0 0 40px var(--cyan)}
+.page-subtitle{font-family:var(--mono);font-size:.9rem;color:var(--text-dim);max-width:560px;line-height:1.8;opacity:0;animation:fadeUp .8s .6s forwards}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.content{position:relative;z-index:2;padding:0 4rem 6rem}
+.reveal{opacity:0;transform:translateY(32px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.section-label{font-family:var(--mono);font-size:.7rem;color:var(--cyan);letter-spacing:.2em;margin-bottom:.75rem}
+.section-heading{font-family:var(--display);font-size:clamp(1.6rem,3vw,2.5rem);font-weight:700;color:#fff;margin-bottom:3rem;line-height:1.2}
+
+/* PIPELINE FLOW - vertical with big steps */
+.pipeline{display:flex;flex-direction:column;gap:0;margin-bottom:6rem;position:relative}
+.pipeline::before{content:'';position:absolute;left:40px;top:60px;bottom:60px;width:1px;background:linear-gradient(to bottom,var(--cyan),var(--purple),var(--cyan));opacity:.3}
+.pipeline-step{display:flex;gap:3rem;align-items:flex-start;position:relative;padding:2.5rem 0}
+.pipeline-step:not(:last-child)::after{content:'';position:absolute;left:40px;bottom:0;width:1px;height:2.5rem;background:linear-gradient(to bottom,rgba(0,245,255,.3),transparent)}
+.step-bullet{flex-shrink:0;width:80px;height:80px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;position:relative;transition:all .4s;cursor:default}
+.step-bullet::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:1px solid var(--cyan);opacity:0;transition:opacity .4s}
+.pipeline-step:hover .step-bullet{border-color:var(--cyan);box-shadow:0 0 30px rgba(0,245,255,.2)}
+.pipeline-step:hover .step-bullet::before{opacity:.4}
+.step-num-big{font-family:var(--display);font-size:1.4rem;font-weight:900;color:var(--cyan);text-shadow:0 0 20px rgba(0,245,255,.4)}
+.step-body{flex:1;padding:.5rem 0}
+.step-phase{font-family:var(--mono);font-size:.65rem;color:var(--cyan);letter-spacing:.2em;margin-bottom:.4rem}
+.step-title{font-family:var(--display);font-size:1.4rem;font-weight:700;color:#fff;margin-bottom:.75rem;letter-spacing:.03em}
+.step-desc{font-size:1rem;color:var(--text-dim);line-height:1.7;margin-bottom:1rem;max-width:680px}
+.step-details{display:flex;flex-wrap:wrap;gap:.5rem}
+.step-detail{font-family:var(--mono);font-size:.65rem;padding:.25rem .6rem;background:rgba(0,245,255,.05);border:1px solid rgba(0,245,255,.15);color:var(--cyan-dim)}
+.step-data{flex-shrink:0;width:200px;padding:1.5rem;background:var(--surface);border:1px solid var(--border);font-family:var(--mono);font-size:.7rem;align-self:center}
+.step-data-label{color:var(--text-dim);margin-bottom:.75rem;font-size:.62rem;letter-spacing:.1em}
+.step-data-val{color:var(--cyan);margin-bottom:.3rem}
+
+/* ARCH DIAGRAM - SVG-based layers */
+.arch-diagram-wrap{margin-bottom:6rem}
+.arch-diagram{background:rgba(0,0,0,.4);border:1px solid var(--border);padding:3rem;position:relative;overflow:hidden}
+.arch-diagram::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent)}
+.arch-layers{display:flex;flex-direction:column;gap:1.5rem}
+.arch-layer{display:flex;align-items:center;gap:1.5rem}
+.layer-label{font-family:var(--mono);font-size:.65rem;color:var(--text-dim);letter-spacing:.15em;width:100px;text-align:right;flex-shrink:0}
+.layer-nodes{display:flex;gap:1rem;flex-wrap:wrap;flex:1}
+.layer-node{padding:.6rem 1.2rem;font-family:var(--display);font-size:.65rem;font-weight:700;letter-spacing:.08em;border:1px solid;transition:all .3s;cursor:default;white-space:nowrap}
+.layer-node.cn{border-color:rgba(0,245,255,.4);color:var(--cyan);background:rgba(0,245,255,.05)}
+.layer-node.cn:hover{background:rgba(0,245,255,.1);box-shadow:0 0 20px rgba(0,245,255,.15)}
+.layer-node.pn{border-color:rgba(180,79,255,.4);color:var(--purple);background:rgba(180,79,255,.05)}
+.layer-node.pn:hover{background:rgba(180,79,255,.1);box-shadow:0 0 20px rgba(180,79,255,.15)}
+.layer-node.gn{border-color:rgba(0,255,136,.4);color:var(--green);background:rgba(0,255,136,.05)}
+.layer-divider{height:1px;background:linear-gradient(90deg,transparent,var(--border-bright),transparent);margin:0 0 0 116px}
+
+/* DATA FLOW STATS */
+.flow-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-bottom:6rem}
+.flow-stat{padding:2rem;background:var(--surface);border:1px solid var(--border);position:relative;overflow:hidden;transition:all .4s}
+.flow-stat:hover{border-color:var(--border-bright);transform:translateY(-4px)}
+.flow-stat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0;transition:opacity .4s}.flow-stat:hover::after{opacity:1}
+.flow-stat-icon{font-family:var(--display);font-size:.65rem;color:var(--cyan);letter-spacing:.15em;margin-bottom:.5rem}
+.flow-stat-val{font-family:var(--display);font-size:2.2rem;font-weight:900;color:var(--cyan);line-height:1;text-shadow:0 0 30px rgba(0,245,255,.3)}
+.flow-stat-label{font-family:var(--mono);font-size:.65rem;color:var(--text-dim);letter-spacing:.1em;margin-top:.4rem}
+.flow-stat-desc{font-size:.85rem;color:var(--text-dim);margin-top:.75rem;line-height:1.6}
+
+/* CTA */
+.arch-cta{text-align:center;padding:4rem;background:var(--surface);border:1px solid var(--border);position:relative;overflow:hidden}
+.arch-cta::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),var(--purple),transparent)}
+.cta-title{font-family:var(--display);font-size:1.8rem;font-weight:700;color:#fff;margin-bottom:1rem}.cta-sub{font-family:var(--mono);font-size:.8rem;color:var(--text-dim);margin-bottom:2rem}
+.btn-row{display:flex;justify-content:center;gap:1rem;flex-wrap:wrap}
+.btn-p{display:inline-flex;align-items:center;gap:.6rem;padding:.85rem 2rem;background:transparent;border:1px solid var(--cyan);color:var(--cyan);font-family:var(--mono);font-size:.78rem;letter-spacing:.15em;text-decoration:none;position:relative;overflow:hidden;transition:all .3s}
+.btn-p::before{content:'';position:absolute;inset:0;background:var(--cyan);transform:translateX(-101%);transition:transform .3s;z-index:0}.btn-p:hover::before{transform:translateX(0)}.btn-p:hover{color:var(--bg);box-shadow:0 0 30px rgba(0,245,255,.4)}.btn-p span{position:relative;z-index:1}
+.btn-o{display:inline-flex;align-items:center;padding:.85rem 2rem;background:transparent;border:1px solid rgba(255,255,255,.1);color:var(--text-dim);font-family:var(--mono);font-size:.78rem;letter-spacing:.15em;text-decoration:none;transition:all .3s}.btn-o:hover{border-color:var(--purple);color:var(--purple);box-shadow:0 0 20px rgba(180,79,255,.2)}
+footer{position:relative;z-index:2;background:rgba(0,0,0,.5);border-top:1px solid var(--border);padding:2.5rem 4rem;text-align:center}
+footer::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),var(--purple),transparent);opacity:.5}
+.foot-logo{font-family:var(--display);font-size:1.2rem;font-weight:700;color:#fff;letter-spacing:.2em;margin-bottom:.75rem}.foot-meta{font-family:var(--mono);font-size:.65rem;color:var(--text-dim)}.foot-sep{margin:0 .75rem;color:var(--border-bright)}
+@media(max-width:900px){nav{padding:1rem 1.5rem}.nav-links{display:none}.page-hero{padding:8rem 1.5rem 3rem}.content{padding:0 1.5rem 4rem}.pipeline-step{flex-direction:column;gap:1.5rem}.step-data{width:100%}.flow-stats{grid-template-columns:1fr}.arch-layers .layer-label{display:none}footer{padding:2rem 1.5rem}}
+</style>
+</head>
+<body>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-trail" id="cursorTrail"></div>
+<canvas id="bgCanvas"></canvas>
+<div class="scanlines"></div>
+
+<nav id="navbar">
+  <div class="nav-logo"><span class="logo-bracket">[</span>THREAT<span class="accent">PILOT</span><span class="logo-bracket">]</span></div>
+  <ul class="nav-links">
+    <li><a href="../index.html">HOME</a></li>
+    <li><a href="about.html">ABOUT</a></li>
+    <li><a href="features.html">FEATURES</a></li>
+    <li><a href="architecture.html" class="active">ARCH</a></li>
+    <li><a href="simulation.html">SIMULATE</a></li>
+    <li><a href="team.html">TEAM</a></li>
+  </ul>
+  <div class="nav-status"><span class="status-dot"></span><span>ARCHITECTURE</span></div>
+</nav>
+
+<div class="page-hero">
+  <div class="page-hero-bg"></div><div class="page-hero-grid"></div>
+  <div class="breadcrumb"><a href="../index.html">HOME</a> / ARCHITECTURE</div>
+  <h1 class="page-title">System <span class="accent">Architecture</span></h1>
+  <p class="page-subtitle">// A deep dive into ThreatPilot's five-phase autonomous security testing pipeline — from target submission to vulnerability report.</p>
+</div>
+
+<div class="content">
+
+  <div class="reveal"><div class="section-label">// 03 · PIPELINE</div><h2 class="section-heading">The 5-Phase <span class="accent">Attack Pipeline</span></h2></div>
+
+  <div class="pipeline reveal">
+    <div class="pipeline-step">
+      <div class="step-bullet"><span class="step-num-big">01</span></div>
+      <div class="step-body">
+        <div class="step-phase">PHASE 01 · INPUT</div>
+        <h3 class="step-title">Target Submission</h3>
+        <p class="step-desc">The user submits a target — either a web application URL or the path to a native mobile APK/IPA file. ThreatPilot validates the input, initializes an isolated Docker sandbox environment, and creates a scan session with a unique ID.</p>
+        <div class="step-details">
+          <span class="step-detail">URL or APK/IPA accepted</span>
+          <span class="step-detail">Docker sandbox isolation</span>
+          <span class="step-detail">Session ID generated</span>
+          <span class="step-detail">CI/CD webhook trigger</span>
+        </div>
+      </div>
+      <div class="step-data">
+        <div class="step-data-label">INPUT SCHEMA</div>
+        <div class="step-data-val">target: "https://..."</div>
+        <div class="step-data-val">mode: "full_attack"</div>
+        <div class="step-data-val">modules: ["sqli","xss"]</div>
+        <div class="step-data-val">intensity: "critical"</div>
+      </div>
+    </div>
+
+    <div class="pipeline-step">
+      <div class="step-bullet"><span class="step-num-big">02</span></div>
+      <div class="step-body">
+        <div class="step-phase">PHASE 02 · RECON</div>
+        <h3 class="step-title">Autonomous Crawling</h3>
+        <p class="step-desc">Playwright-powered headless browser crawls every accessible route. For mobile apps, Frida instruments the runtime to intercept API calls and map network traffic. The result is a complete attack surface inventory with endpoints, parameters, and authentication flows.</p>
+        <div class="step-details">
+          <span class="step-detail">Playwright headless crawl</span>
+          <span class="step-detail">Frida mobile instrumentation</span>
+          <span class="step-detail">API route discovery</span>
+          <span class="step-detail">Form &amp; parameter mapping</span>
+          <span class="step-detail">Auth flow traversal</span>
+        </div>
+      </div>
+      <div class="step-data">
+        <div class="step-data-label">RECON OUTPUT</div>
+        <div class="step-data-val">endpoints: 47</div>
+        <div class="step-data-val">forms: 12</div>
+        <div class="step-data-val">parameters: 89</div>
+        <div class="step-data-val">auth_flows: 3</div>
+      </div>
+    </div>
+
+    <div class="pipeline-step">
+      <div class="step-bullet"><span class="step-num-big">03</span></div>
+      <div class="step-body">
+        <div class="step-phase">PHASE 03 · ATTACK</div>
+        <h3 class="step-title">AI Attack Engine</h3>
+        <p class="step-desc">GPT-4o processes the attack surface map and generates a contextual attack strategy — not template payloads, but adaptive, target-specific vectors. The attack engine executes SQLi, XSS, auth bypass, brute force, CSRF, and traversal attacks across all mapped endpoints simultaneously.</p>
+        <div class="step-details">
+          <span class="step-detail">GPT-4o strategy generation</span>
+          <span class="step-detail">Adaptive payload mutation</span>
+          <span class="step-detail">Parallel multi-vector attacks</span>
+          <span class="step-detail">Rate-limited to avoid lockout</span>
+          <span class="step-detail">LangChain agent orchestration</span>
+        </div>
+      </div>
+      <div class="step-data">
+        <div class="step-data-label">ATTACK STATS</div>
+        <div class="step-data-val">vectors: 47</div>
+        <div class="step-data-val">payloads_sent: 1,240</div>
+        <div class="step-data-val">parallel_threads: 12</div>
+        <div class="step-data-val">duration: 18s</div>
+      </div>
+    </div>
+
+    <div class="pipeline-step">
+      <div class="step-bullet"><span class="step-num-big">04</span></div>
+      <div class="step-body">
+        <div class="step-phase">PHASE 04 · ANALYSIS</div>
+        <h3 class="step-title">AI Response Analysis</h3>
+        <p class="step-desc">Every HTTP response, error message, and behavioral anomaly is fed back to the LLM for classification. The AI distinguishes true vulnerabilities from noise, assigns CVSS v3.1 severity scores, and identifies exploit chains — correlating multiple vulnerabilities that can be combined for greater impact.</p>
+        <div class="step-details">
+          <span class="step-detail">LLM response classification</span>
+          <span class="step-detail">False positive elimination</span>
+          <span class="step-detail">CVSS v3.1 scoring</span>
+          <span class="step-detail">Exploit chain correlation</span>
+          <span class="step-detail">Confidence scoring</span>
+        </div>
+      </div>
+      <div class="step-data">
+        <div class="step-data-label">ANALYSIS OUTPUT</div>
+        <div class="step-data-val">confirmed: 5</div>
+        <div class="step-data-val">false_pos: 3</div>
+        <div class="step-data-val">chains: 2</div>
+        <div class="step-data-val">avg_cvss: 8.4</div>
+      </div>
+    </div>
+
+    <div class="pipeline-step">
+      <div class="step-bullet"><span class="step-num-big">05</span></div>
+      <div class="step-body">
+        <div class="step-phase">PHASE 05 · REPORT</div>
+        <h3 class="step-title">Report Generation</h3>
+        <p class="step-desc">A comprehensive security report is auto-generated with CVE-style IDs, reproduction steps, affected endpoints, CVSS scores, and AI-suggested code fixes. Delivered as JSON for CI/CD pipelines, PDF for executives, or directly to Jira/Slack for dev teams — in seconds.</p>
+        <div class="step-details">
+          <span class="step-detail">CVE-style IDs assigned</span>
+          <span class="step-detail">AI code fix suggestions</span>
+          <span class="step-detail">JSON / PDF / Webhook export</span>
+          <span class="step-detail">Jira ticket auto-creation</span>
+          <span class="step-detail">Slack alert delivery</span>
+        </div>
+      </div>
+      <div class="step-data">
+        <div class="step-data-label">REPORT METRICS</div>
+        <div class="step-data-val">critical: 2</div>
+        <div class="step-data-val">high: 2</div>
+        <div class="step-data-val">medium: 1</div>
+        <div class="step-data-val">total_time: ~30s</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SYSTEM LAYERS DIAGRAM -->
+  <div class="arch-diagram-wrap reveal">
+    <div class="section-label">// SYSTEM LAYERS</div>
+    <h2 class="section-heading">Component <span class="accent">Architecture</span></h2>
+    <div class="arch-diagram">
+      <div class="arch-layers">
+        <div class="arch-layer">
+          <div class="layer-label">INPUT LAYER</div>
+          <div class="layer-nodes">
+            <div class="layer-node cn">Web Target (URL)</div>
+            <div class="layer-node cn">Mobile Target (APK/IPA)</div>
+            <div class="layer-node cn">CI/CD Webhook</div>
+            <div class="layer-node cn">REST API</div>
+          </div>
+        </div>
+        <div class="arch-divider"></div>
+        <div class="arch-layer">
+          <div class="layer-label">CRAWL LAYER</div>
+          <div class="layer-nodes">
+            <div class="layer-node pn">Playwright Browser</div>
+            <div class="layer-node pn">Frida Instrumentation</div>
+            <div class="layer-node pn">API Discovery Engine</div>
+            <div class="layer-node pn">Auth Flow Mapper</div>
+          </div>
+        </div>
+        <div class="arch-divider"></div>
+        <div class="arch-layer">
+          <div class="layer-label">AI LAYER</div>
+          <div class="layer-nodes">
+            <div class="layer-node cn">GPT-4o Attack Planner</div>
+            <div class="layer-node cn">LangChain Orchestrator</div>
+            <div class="layer-node cn">Response Analyzer</div>
+            <div class="layer-node cn">Chain Correlator</div>
+          </div>
+        </div>
+        <div class="arch-divider"></div>
+        <div class="arch-layer">
+          <div class="layer-label">ATTACK LAYER</div>
+          <div class="layer-nodes">
+            <div class="layer-node pn">SQLi Engine</div>
+            <div class="layer-node pn">XSS Engine</div>
+            <div class="layer-node pn">Auth Bypass</div>
+            <div class="layer-node pn">Brute Force</div>
+            <div class="layer-node pn">CSRF Tester</div>
+            <div class="layer-node pn">Dir Traversal</div>
+          </div>
+        </div>
+        <div class="arch-divider"></div>
+        <div class="arch-layer">
+          <div class="layer-label">OUTPUT LAYER</div>
+          <div class="layer-nodes">
+            <div class="layer-node gn">Vuln Report (PDF)</div>
+            <div class="layer-node gn">JSON Export</div>
+            <div class="layer-node gn">Jira Integration</div>
+            <div class="layer-node gn">Slack Alerts</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOW STATS -->
+  <div class="reveal"><div class="section-label">// PERFORMANCE</div><h2 class="section-heading">Pipeline <span class="accent">Benchmarks</span></h2></div>
+  <div class="flow-stats reveal">
+    <div class="flow-stat">
+      <div class="flow-stat-icon">SCAN TIME</div>
+      <div class="flow-stat-val">~30s</div>
+      <div class="flow-stat-label">AVERAGE FULL SCAN</div>
+      <p class="flow-stat-desc">From target submission to completed vulnerability report. Compare to 1–3 weeks for manual pen testing.</p>
+    </div>
+    <div class="flow-stat">
+      <div class="flow-stat-icon">ACCURACY</div>
+      <div class="flow-stat-val">99%</div>
+      <div class="flow-stat-label">TRUE POSITIVE RATE</div>
+      <p class="flow-stat-desc">AI classification eliminates false positives that plague legacy scanners, delivering only confirmed, actionable findings.</p>
+    </div>
+    <div class="flow-stat">
+      <div class="flow-stat-icon">COVERAGE</div>
+      <div class="flow-stat-val">360°</div>
+      <div class="flow-stat-label">ATTACK SURFACE COVERAGE</div>
+      <p class="flow-stat-desc">Every endpoint, parameter, form, and API route is tested — web and mobile. No attack surface left unexplored.</p>
+    </div>
+  </div>
+
+  <div class="arch-cta reveal">
+    <div class="cta-title">Watch the pipeline <span class="accent">execute live</span></div>
+    <div class="cta-sub">// Launch the interactive simulation to see each phase of the architecture run in real time</div>
+    <div class="btn-row">
+      <a href="simulation.html" class="btn-p"><span>⬡ LAUNCH SIMULATION</span></a>
+      <a href="features.html" class="btn-o">VIEW FEATURES →</a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="foot-logo"><span class="logo-bracket">[</span>THREAT<span class="accent">PILOT</span><span class="logo-bracket">]</span></div>
+  <div class="foot-meta">© 2026 Team GreyMatter<span class="foot-sep">·</span>Satyam Mishra<span class="foot-sep">·</span>Hack &amp; Break 2026</div>
+</footer>
+
+<script>
+const cur=document.getElementById('cursor'),trail=document.getElementById('cursorTrail');
+let mx=0,my=0,tx=0,ty=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px'});
+(function a(){tx+=(mx-tx)*.12;ty+=(my-ty)*.12;trail.style.left=tx+'px';trail.style.top=ty+'px';requestAnimationFrame(a)})();
+const canvas=document.getElementById('bgCanvas'),ctx=canvas.getContext('2d');
+canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;initP()});
+const pts=[];
+function initP(){pts.length=0;for(let i=0;i<70;i++)pts.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,s:Math.random()*1.5+.3,o:Math.random()*.4+.1,c:Math.random()>.5?'0,245,255':'180,79,255',p:Math.random()*Math.PI*2,ps:.01+Math.random()*.02})}
+initP();let ht=0;
+function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);ht+=.002;const sz=40,cols=Math.ceil(canvas.width/(sz*1.75))+2,rows=Math.ceil(canvas.height/(sz*1.5))+2;for(let r=-1;r<rows;r++)for(let c=-1;c<cols;c++){const x=c*sz*1.75+(r%2)*sz*.875,y=r*sz*1.5,d=Math.sqrt((x-canvas.width/2)**2+(y-canvas.height/2)**2),w=Math.sin(d*.008-ht*2)*.5+.5,al=w*.04+.01;ctx.beginPath();for(let i=0;i<6;i++){const ag=(Math.PI/3)*i;ctx.lineTo(x+sz*.85*Math.cos(ag),y+sz*.85*Math.sin(ag))}ctx.closePath();ctx.strokeStyle=`rgba(0,245,255,${al})`;ctx.lineWidth=.4;ctx.stroke()}for(let i=0;i<pts.length;i++){const p=pts[i];p.x+=p.vx;p.y+=p.vy;p.p+=p.ps;if(p.x<0||p.x>canvas.width||p.y<0||p.y>canvas.height){p.x=Math.random()*canvas.width;p.y=Math.random()*canvas.height}ctx.beginPath();ctx.arc(p.x,p.y,p.s,0,Math.PI*2);ctx.fillStyle=`rgba(${p.c},${p.o*(.7+.3*Math.sin(p.p))})`;ctx.fill();for(let j=i+1;j<pts.length;j++){const q=pts[j],dx=p.x-q.x,dy=p.y-q.y,dist=Math.sqrt(dx*dx+dy*dy);if(dist<90){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.strokeStyle=`rgba(0,245,255,${(1-dist/90)*.06})`;ctx.lineWidth=.5;ctx.stroke()}}}requestAnimationFrame(draw)}
+draw();
+window.addEventListener('scroll',()=>document.getElementById('navbar').classList.toggle('scrolled',scrollY>60));
+const ro=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){x.target.classList.add('visible');ro.unobserve(x.target)}}),{threshold:.1});
+document.querySelectorAll('.reveal').forEach(el=>ro.observe(el));
+// Pipeline step reveal
+const pObs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){const steps=document.querySelectorAll('.pipeline-step');steps.forEach((s,i)=>setTimeout(()=>{s.style.opacity='1';s.style.transform='translateX(0)'},i*200));pObs.disconnect()}})},{threshold:.1});
+const pipeline=document.querySelector('.pipeline');
+if(pipeline){document.querySelectorAll('.pipeline-step').forEach(s=>{s.style.opacity='0';s.style.transform='translateX(-20px)';s.style.transition='opacity .6s,transform .6s'});pObs.observe(pipeline);}
+// Arch layer reveal
+const lObs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){const layers=document.querySelectorAll('.arch-layer');layers.forEach((l,i)=>setTimeout(()=>{l.style.opacity='1';l.style.transform='translateY(0)'},i*150));lObs.disconnect()}})},{threshold:.2});
+const ad=document.querySelector('.arch-diagram');
+if(ad){document.querySelectorAll('.arch-layer').forEach(l=>{l.style.opacity='0';l.style.transform='translateY(16px)';l.style.transition='opacity .5s,transform .5s'});lObs.observe(ad);}
+</script>
+</body>
+</html>
