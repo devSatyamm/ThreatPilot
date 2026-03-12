@@ -211,15 +211,15 @@ Real-time vulnerability tracking, historical trend analysis, and compliance moni
 
 Meet the brilliant minds behind ThreatPilot:
 
-| Name | Role | GitHub |
-|------|------|--------|
-| 👨‍💻 **Satyam Mishra** | AI & Backend Architecture | [@devSatyamm](https://github.com/devSatyamm) |
-| 👨‍💻 **Rudraksh Purohit** | Security & Vulnerability Detection | @RudrakshPurohit |
-| 👨‍💻 **Devansh Agarwal** | Frontend & UI/UX | @DevanshAgarwal |
+| Name | Instagram |
+|------|--------|
+| 👨‍💻 **Satyam Mishra** | [Developersatyam](https://www.instagram.com/developersatyam/) |
+| 👨‍💻 **Rudraksh Purohit** | [Rudraksh Purohit](https://www.instagram.com/purohit.rudraksh018/) |
+| 👨‍💻 **Devansh Agarwal** | [Devansh Agarwal](https://www.instagram.com/devansh___agarwal0404/) |
 
-**Hackathon**: [Hackathon Name]  
+**Hackathon**:  Hack & Break: Generative AI & Cybersecurity Innovation Challenge
 **Event Date**: March 2026  
-**Team ID**: GreyMatter
+**Team Name**: GreyMatter
 
 ---
 
@@ -273,14 +273,7 @@ We welcome contributions from the cybersecurity community! Please feel free to:
 
 ---
 
-## 📞 Support & Contact
 
-- **Email**: threatpilot@greymatter.dev
-- **Discord**: [Join our server]
-- **Twitter**: [@ThreatPilot](https://twitter.com/)
-- **Issues**: [GitHub Issues](https://github.com/devSatyamm/ThreatPilot/issues)
-
----
 
 ## ⭐ Show Your Support
 
