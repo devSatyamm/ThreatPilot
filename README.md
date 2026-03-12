@@ -260,11 +260,11 @@ Meet the brilliant minds behind ThreatPilot:
 
 | Name | Instagram |
 |------|--------|
-| 👨‍💻 **Satyam Mishra** | [Developersatyam](https://www.instagram.com/developersatyam/) |
+| 👨‍💻 **Satyam Mishra**     | [Developersatyam](https://www.instagram.com/developersatyam/) |  
 | 👨‍💻 **Rudraksh Purohit** | [Rudraksh Purohit](https://www.instagram.com/purohit.rudraksh018/) |
 | 👨‍💻 **Devansh Agarwal** | [Devansh Agarwal](https://www.instagram.com/devansh___agarwal0404/) |
 
-**Hackathon**:  Hack & Break: Generative AI & Cybersecurity Innovation Challenge
+**Hackathon Name**:  Hack & Break: Generative AI & Cybersecurity Innovation Challenge
 
 **Event Date**: March 2026  
 
